@@ -127,9 +127,8 @@ and collapsible, and the layout is remembered per browser.
 | script | purpose |
 |---|---|
 | `install.sh` | install/upgrade + optional systemd unit |
-| `scripts/deploy.sh` | dev → production (Lyra) with backup + verification |
 | `scripts/dev.sh` | run a dev instance beside prod |
-| `scripts/pull-fleet.sh`, `push-laptop.sh`, `fleet-sync.sh` | move `state.db` snapshots between hosts |
+| `scripts/dev.sh` | move `state.db` snapshots between hosts |
 | `scripts/repair_history.py` | rebuild/compact `history.jsonl` |
 | `scripts/backfill_tokens.py` | add `by_model_tokens` to older history rows |
 | `_audit.py` | consistency audit of the history file |

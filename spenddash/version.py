@@ -6,10 +6,10 @@
 - CALLED BY: server (/data payload -> the UI header shows it)
 - CALLS: config.APP_DIR
 - CONTRACT: returns {"env": "dev"|"production"|..., "build": "<git-short-hash|VERSION>"}.
-  env comes from SDASH_ENV (set to "production" by the systemd unit on Lyra);
-  build from SDASH_BUILD, else the VERSION file written by scripts/deploy.sh,
+  env comes from SDASH_ENV (set to "production" by the systemd unit on the production host);
+  build from SDASH_BUILD, else the VERSION file written by the deploy step,
   else "dev". Displayed in the header so you can always tell which build a page
-  is serving — the same code runs in dev (laptop) and production (Lyra).
+  is serving — the same code runs in dev (laptop) and production (the production host).
 """
 import os
 

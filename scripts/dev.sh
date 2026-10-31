@@ -5,7 +5,7 @@
 #   ./scripts/dev.sh          # collect + serve on http://127.0.0.1:8399/
 #   ./scripts/dev.sh --serve  # serve only, no background collector
 #
-# Production is the same tree deployed to Lyra (see scripts/deploy.sh).
+# Production is the same tree deployed to the production host.
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO"
