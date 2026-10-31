@@ -1,0 +1,13 @@
+{
+  "agents": [
+    {
+      "label": "laptop",
+      "db": "/home/USER/.hermes/state.db"
+    },
+    {
+      "label": "workstation",
+      "db": "/home/USER/.hermes/profiles/twin/state.db"
+    }
+  ],
+  "scan_dir": "/opt/agents-spendings/fleet"
+}

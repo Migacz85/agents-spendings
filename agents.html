@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes · Agents</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="js/vendor/codemirror/codemirror.min.css">
+<script src="js/vendor/codemirror/codemirror.min.js"></script>
+<script src="js/vendor/codemirror/markdown.min.js"></script>
+<script src="js/vendor/codemirror-vim.js"></script>
+</head>
+<body>
+<!-- Agent catalog page — sibling of the spend dashboard, same backend (/data),
+     same stylesheet. Structure only; rendering is js/agents-app.js. -->
+<header>
+  <h1>Hermes · Agents</h1>
+  <span id="stamp">—</span>
+  <span class="hd-right">
+    <a class="navlink" href="index.html" title="back to spend dashboard">← Dashboard</a>
+  </span>
+</header>
+<main>
+  <!-- fleet hero: who's here, who's alive, how much they all burn -->
+  <div class="cards">
+    <div class="card big"><div class="label">Agents connected</div><div class="value" id="ag-count">—</div></div>
+    <div class="card"><div class="label">Active now</div><div class="value" id="ag-active">—</div><div class="sub">last 30 min</div></div>
+    <div class="card"><div class="label">Lifetime spend (Σ)</div><div class="value" id="ag-lifetime">—</div></div>
+    <div class="card"><div class="card-top"><div class="label">Combined burn</div><select id="rate-win" title="timeframe the burn rate is measured over">
+        <option value="5">5m</option><option value="10">10m</option><option value="15">15m</option><option value="30" selected>30m</option>
+        <option value="60">1h</option><option value="360">6h</option><option value="1440">24h</option><option value="10080">7d</option>
+        <option value="20160">14d</option><option value="30240">21d</option><option value="43200">30d</option>
+      </select></div><div class="value" id="ag-rate">—</div><div class="sub">per hour</div></div>
+    <div class="card"><div class="label">Agents with cron on</div><div class="value" id="ag-crons">—</div></div>
+  </div>
+
+  <!-- the fleet table: one row per agent, click a row for the full profile -->
+  <div class="panel" id="pane-agents-list">
+    <h2>Agents <span class="hint">click a row to expand</span></h2>
+    <div class="table-wrap"><table id="agents-table"><thead><tr>
+      <th class="sortable" data-k="label">Agent</th><th class="sortable" data-k="role">Role</th>
+      <th class="num sortable" data-k="last">Last act</th><th class="num sortable" data-k="life">Lifetime</th>
+      <th class="num sortable" data-k="m15">15m</th>
+      <th class="num sortable" data-k="h1">1h</th><th class="num sortable" data-k="h3">3h</th>
+      <th class="num sortable" data-k="crons">Crons</th>
+    </tr></thead><tbody id="agents-tbody"></tbody></table></div>
+  </div>
+</main>
+<!-- cron delete confirmation modal -->
+<div class="modal-overlay" id="cron-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cron-modal-title">
+    <h3 id="cron-modal-title">Delete cron job?</h3>
+    <p class="muted" id="cron-modal-text">This removes the job from the agent's cron/jobs.json.</p>
+    <div class="modal-actions">
+      <button id="cron-modal-cancel" class="btn-ghost">cancel</button>
+      <button id="cron-modal-ok" class="btn-danger">delete</button>
+    </div>
+  </div>
+</div>
+<!-- file editor modal -->
+<div class="modal-overlay" id="file-modal" hidden>
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="file-modal-title">
+    <h3 id="file-modal-title">Edit</h3>
+    <p class="muted" id="file-modal-path"></p>
+    <div id="file-modal-ed" class="file-editor"></div>
+    <div class="modal-actions">
+      <button id="file-modal-cancel" class="btn-ghost">cancel</button>
+      <button id="file-modal-ok" class="btn-ghost">save</button>
+    </div>
+  </div>
+</div>
+<!-- skills explorer modal -->
+<div class="modal-overlay" id="skills-modal" hidden>
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="skills-modal-title">
+    <h3 id="skills-modal-title">Skills</h3>
+    <p class="muted" id="skills-modal-path"></p>
+    <input id="skills-filter" type="text" placeholder="filter skills…" class="skills-filter">
+    <ul id="skills-list" class="skills-list"></ul>
+    <div class="modal-actions">
+      <button id="skills-modal-close" class="btn-ghost">close</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/agents-app.js"></script>
+</body>
+</html>

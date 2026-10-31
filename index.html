@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes Spend Dashboard</title>
+<!-- machine-readable API discovery: agents can find the JSON index from here -->
+<meta name="description" content="Hermes fleet spend dashboard. Machine-readable read-only JSON API — start at /api (summary, agents, models). Money in USD; window in minutes.">
+<meta name="ai-api" content="/api">
+<meta name="ai-api-summary" content="/api/summary?window=480">
+<link rel="alternate" type="application/json" href="/api" title="Agent API index">
+<link rel="llms" type="text/plain" href="/llms.txt" title="Plain-text API guide for LLM agents">
+<link rel="stylesheet" href="style.css">
+<script src="js/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+<!-- Pure structure. All styling: style.css. All behavior: js/* (ES modules). -->
+<header>
+  <h1>Hermes · Spend</h1>
+  <span id="stamp">—</span>
+  <span class="hd-right">
+    <span class="hint" id="cal-note" title="per-agent/model figures are Hermes cost ESTIMATES (priced from the model price list), scaled by the measured paid/estimate ratio so they reconcile with the real bill"></span>
+    <label class="hint cal-wrap" title="scale per-agent estimates to what was actually paid (toggle off to see raw estimates)"><input type="checkbox" id="cal-toggle" checked> calibrate to paid</label>
+    <a class="navlink" href="/api" title="machine-readable JSON for agents">API</a>
+    <a class="navlink" href="agents.html" title="agent catalog">Agents →</a>
+    <button id="reset-layout" title="restore default panel order">↺ reset layout</button>
+  </span>
+</header>
+<main>
+  <!-- hero: the five numbers that answer "how am I burning money" -->
+  <div class="cards">
+    <div class="card big"><div class="label">OpenRouter balance</div><div class="value" id="c-balance">—</div><div class="sub"><span id="c-used">—</span> used<span class="muted" id="c-balstale"></span></div></div>
+    <div class="card"><div class="label">Spent today</div><div class="value today" id="c-today">—</div></div>
+    <div class="card"><div class="label">Spent in last 1h</div><div class="value" id="c-1h">—</div></div>
+    <div class="card"><div class="label">Spent in last 8h</div><div class="value" id="c-8h">—</div></div>
+    <div class="card"><div class="label">Spent in last 24h</div><div class="value" id="c-24h">—</div></div>
+    <div class="card"><div class="label">Spent in last 7d</div><div class="value" id="c-7d">—</div></div>
+    <div class="card"><div class="label">Lifetime ledger</div><div class="value" id="c-ledger">—</div></div>
+    <div class="card"><div class="card-top"><div class="label">Runway</div><select id="runway-win" title="burn window the runway is estimated from">
+        <option value="15">15m</option><option value="30">30m</option><option value="60">1h</option>
+        <option value="120">2h</option><option value="240">4h</option><option value="480">8h</option>
+        <option value="1440" selected>day</option>
+        <option value="10080">1 week</option><option value="20160">2 weeks</option><option value="43200">month</option>
+      </select></div><div class="value" id="c-runway" title="hover for how this is calculated">—</div>
+      <div class="sub">spent <span id="c-rate2">—</span> in last <span class="muted" id="c-runwaywin"></span> · <span id="c-cap">8h</span>/day cap → <span id="c-runway-cap" title="hover for how this is calculated">—</span></div></div>
+  </div>
+
+  <!-- the star: who's spending, sortable, built for 8+ agents -->
+  <div class="panel" id="pane-agents">
+    <h2>Spend by agent vs timeframe <span class="collapse-hint hint">— totals only · expand ▸ for per-agent</span></h2>
+    <div class="table-wrap"><table id="agents-table"><thead><tr>
+      <th class="sortable" data-k="label">Agent</th><th class="num sortable" data-k="m5">5m</th><th class="num sortable" data-k="m10">10m</th>
+      <th class="num sortable" data-k="m15">15m</th><th class="num sortable" data-k="m30">30m</th>
+      <th class="num sortable" data-k="h1">1h</th><th class="num sortable" data-k="h2">2h</th>
+      <th class="num sortable" data-k="h3">3h</th><th class="num sortable" data-k="h4">4h</th>
+      <th class="num sortable" data-k="share">Share</th>
+      <th class="num sortable" data-k="rate">$/h</th><th class="num sortable" data-k="last">Last act</th><th></th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="panel" id="pane-proj">
+    <h2>Projection — spend at current rate
+      <span class="proj-cap-wrap">
+        <label class="hint" for="proj-cap">max hrs/day</label>
+        <select id="proj-cap">
+          <option value="1">1h</option><option value="2">2h</option><option value="3">3h</option>
+          <option value="4">4h</option><option value="6">6h</option><option value="8" selected>8h</option>
+          <option value="10">10h</option><option value="12">12h</option><option value="16">16h</option>
+          <option value="20">20h</option><option value="24">24h</option><option value="custom">custom…</option>
+        </select>
+        <input type="number" id="proj-cap-custom" min="1" max="24" step="1" placeholder="h/day" style="display:none;width:70px">
+      </span>
+    </h2>
+    <div class="card" id="spent-proj-card"><div class="card-top"><div class="label">Spent in last</div><select id="rate-win" title="window the spend is measured over">
+        <option value="5">5m</option><option value="15">15m</option><option value="30">30m</option>
+        <option value="60">1h</option><option value="120">2h</option><option value="240">4h</option><option value="480">8h</option><option value="720">12h</option><option value="1440" selected>24h</option><option value="10080">1 week</option><option value="20160">2 weeks</option>
+      </select></div><div class="value" id="c-rate">—</div><div class="sub"><span id="c-ratewin">—</span></div></div>
+    <div id="proj-sub" class="hint">—</div>
+    <div id="proj-box">—</div>
+  </div>
+
+  <div class="panel" id="pane-agent-chart">
+    <h2>Agents — who sank the balance (stacked)
+      <span class="hint">each agent's band stacks under the previous one; the bottom edge is the real balance · legend shows each agent's share of the drop · idle agents are hidden</span>
+      <span class="hint" id="agents-chart-note"></span>
+      <span class="pill-group" id="chart-pills">
+        <button class="pill" data-win="15">15m</button><button class="pill" data-win="30">30m</button>
+        <button class="pill" data-win="60">1h</button><button class="pill" data-win="120">2h</button>
+        <button class="pill" data-win="240">4h</button><button class="pill" data-win="480">8h</button>
+        <button class="pill" data-win="720">12h</button><button class="pill" data-win="1440">24h</button>
+        <button class="pill" data-win="0">all</button>
+      </span>
+      <button class="pill" id="agents-axis" title="switch the left axis between the account balance (down) and the money spent (up)">axis: balance</button>
+    </h2>
+    <canvas id="chart-agents"></canvas>
+    <div class="hint" style="margin:14px 0 4px">input vs output money by model — <span id="inout-label">collecting token history…</span> <span class="muted">· estimates: per-token prices solved from the fleet's own call history · same timeframe as the pills above</span></div>
+    <div style="position:relative;height:200px;margin-bottom:4px"><canvas id="chart-inout"></canvas></div>
+  </div>
+
+  <div class="panel" id="pane-balance">
+    <h2>OpenRouter balance over time
+      <span class="hint" id="bal-chart-sub"></span>
+      <span class="pill-group" id="bal-pills">
+        <button class="pill" data-win="15">15m</button><button class="pill" data-win="30">30m</button>
+        <button class="pill" data-win="60">1h</button><button class="pill" data-win="120">2h</button>
+        <button class="pill" data-win="240">4h</button><button class="pill" data-win="480">8h</button>
+        <button class="pill" data-win="720">12h</button><button class="pill" data-win="1440">24h</button>
+        <button class="pill" data-win="0">all</button>
+      </span>
+    </h2>
+    <canvas id="chart-balance"></canvas>
+  </div>
+
+  <div class="panel" id="pane-sessions">
+    <h2>Session explorer — spend per session</h2>
+    <div class="session-pick">
+      <label class="hint" for="ses-agent">agent</label>
+      <select id="ses-agent"></select>
+      <label class="hint" for="ses-session">session</label>
+      <select id="ses-session"></select>
+      <input type="text" id="ses-name" placeholder="name this session…" maxlength="120" autocomplete="off">
+      <button id="ses-save">save name</button>
+    </div>
+    <div class="table-wrap"><table id="sessions-table"><thead><tr>
+      <th>Model</th><th>Task</th><th class="num">Calls</th><th class="num">Est. cost</th>
+      <th class="num">In tok</th><th class="num">Out tok</th><th class="num">Cache</th><th class="num">Reasoning</th><th class="num">Last seen</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="panel" id="pane-models-detail">
+    <h2>Models — spend by timeframe &amp; lifetime
+      <button class="pill" id="models-detail-toggle" title="switch the token/call columns between the selected timeframe and lifetime">tokens: window</button>
+    </h2>
+    <div class="table-wrap"><table id="models-table"><thead><tr>
+      <th>Model</th><th class="num" id="models-detail-win-label">Last 30m</th><th class="num">Lifetime</th><th class="num">Share</th>
+      <th class="num" id="models-detail-calls-label">API calls</th><th class="num">Input tok</th><th class="num">Output tok</th>
+      <th class="num">Cache read</th><th class="num">Cache write</th><th class="num">Reasoning</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

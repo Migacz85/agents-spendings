@@ -1,0 +1,14 @@
+agents.json
+*.bak
+.deploy-exclude
+docs/*.tmp
+.DS_Store
+fleet/
+history.jsonl
+_inspect.py
+*.pyc
+__pycache__/
+session_names.json
+*.swp
+sync.log
+VERSION
